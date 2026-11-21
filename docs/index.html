@@ -1,0 +1,148 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>CDMX Multimodal Route Planner | A* + Markov</title>
+  <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
+  <link rel="stylesheet" href="css/styles.css?v=5" />
+</head>
+<body>
+  <div class="layout">
+    <aside class="sidebar">
+      <header class="header">
+        <div class="header-top">
+          <h1>CDMX Multimodal Routing</h1>
+          <span class="live-badge" title="Route recalculates automatically when changing any parameter">● Live</span>
+        </div>
+        <p>Stochastic A* + Markov Chains (Metro &amp; Metrobús)</p>
+      </header>
+
+      <section class="panel">
+        <div class="route-inputs">
+          <div class="route-fields">
+            <div class="field-group">
+              <label for="input-origen">Origin</label>
+              <div class="combobox">
+                <input type="text" id="input-origen" placeholder="Type station or line..." autocomplete="off" />
+                <div id="list-origen" class="combobox-list"></div>
+              </div>
+            </div>
+
+            <div class="field-group">
+              <label for="input-destino">Destination</label>
+              <div class="combobox">
+                <input type="text" id="input-destino" placeholder="Type station or line..." autocomplete="off" />
+                <div id="list-destino" class="combobox-list"></div>
+              </div>
+            </div>
+          </div>
+
+          <button id="btn-swap" class="btn-swap" title="Swap origin and destination" aria-label="Swap origin and destination">⇅</button>
+        </div>
+
+        <div class="field-group">
+          <label for="select-franja">Time Window (Markov)</label>
+          <select id="select-franja">
+            <option value="auto" selected>Automatic (Current time)</option>
+            <option value="manana_pico">Manual: Morning Peak (06:30 - 09:30)</option>
+            <option value="valle">Manual: Off-Peak (09:30 - 17:00)</option>
+            <option value="tarde_pico">Manual: Evening Peak (17:00 - 21:00)</option>
+            <option value="noche">Manual: Night (21:00 - 00:00)</option>
+          </select>
+          <span id="franja-auto-info" class="hint"></span>
+        </div>
+
+        <div class="slider-group">
+          <div class="slider-header">
+            <label for="slider-riesgo">Risk Aversion (&alpha;)</label>
+            <span id="val-riesgo">2.0 · Balanced</span>
+          </div>
+          <input type="range" id="slider-riesgo" min="0" max="5" step="0.5" value="2.0" />
+        </div>
+
+        <div class="slider-group">
+          <div class="slider-header">
+            <label for="slider-caminata">Max Outdoor Walking</label>
+            <span id="val-caminata">600 m · ~8 min</span>
+          </div>
+          <input type="range" id="slider-caminata" min="0" max="800" step="50" value="600" />
+        </div>
+
+        <label class="switch-row">
+          <span class="switch-text">Simulate CDMX rain <small>(safety slow-down)</small></span>
+          <span class="switch">
+            <input type="checkbox" id="check-lluvia" />
+            <span class="switch-slider"></span>
+          </span>
+        </label>
+      </section>
+
+      <section class="panel">
+        <div class="panel-header">
+          <h2>Disruptions &amp; Conflict Zones</h2>
+          <span id="contador-bloqueos" class="count-pill">0 stations</span>
+        </div>
+
+        <div class="chips">
+          <label class="chip">
+            <input type="checkbox" class="zona-check" value="corredor_reforma" />
+            <span>Reforma Protest</span>
+          </label>
+          <label class="chip">
+            <input type="checkbox" class="zona-check" value="centro_historico" />
+            <span>Zócalo / Downtown</span>
+          </label>
+          <label class="chip">
+            <input type="checkbox" class="zona-check" value="insurgentes_centro" />
+            <span>Central Insurgentes</span>
+          </label>
+          <label class="chip">
+            <input type="checkbox" class="zona-check" value="balderas_juarez" />
+            <span>Balderas / Juárez</span>
+          </label>
+        </div>
+
+        <label class="switch-row" style="margin-top: 4px;">
+          <span class="switch-text">Avoid all historical conflict zones</span>
+          <span class="switch">
+            <input type="checkbox" id="check-historicas" />
+            <span class="switch-slider"></span>
+          </span>
+        </label>
+
+        <p class="hint">Click any station on the map to block or unblock it instantly.</p>
+
+        <button id="btn-limpiar" class="btn-secondary" disabled>No active disruptions</button>
+      </section>
+
+      <section class="panel" id="panel-resultados">
+        <div class="panel-header">
+          <h2>Route Comparison</h2>
+          <button id="btn-centrar" class="btn-link" title="Zoom to fit route">Fit to route</button>
+        </div>
+        <div id="resumen-metricas" class="metrics-grid">
+          <p class="hint">Select origin and destination to see results.</p>
+        </div>
+        <div id="lista-tramos" class="tramos-list"></div>
+      </section>
+    </aside>
+
+    <main class="map-container">
+      <div id="map"></div>
+      <div class="legend">
+        <div><span class="dot oficial"></span> Metro / Metrobús (official colors)</div>
+        <div><span class="dot transbordo"></span> Internal transfer</div>
+        <div><span class="dot caminata"></span> Outdoor walk</div>
+        <div><span class="dot estatica"></span> Static Route (baseline)</div>
+        <div><span class="dot bloqueado"></span> Blocked Station</div>
+      </div>
+    </main>
+  </div>
+
+  <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
+  <script src="js/markov.js"></script>
+  <script src="js/astar.js?v=5"></script>
+  <script src="js/app.js?v=5"></script>
+</body>
+</html>
